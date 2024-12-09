@@ -680,72 +680,77 @@ void iGate4x::updateInputGain(uint8_t value, uint8_t softPhoneID)
     int i = (softPhoneIDCheck(softPhoneID));
     m_softPhone_list.at(i)->inputLevel = value;
     qDebug() << " m_softPhone_list.at()->inputLevel" << i << m_softPhone_list.at(i)->inputLevel;
+    bool i2cwrite_ret = false;
     switch (softPhoneID) {
     case 1:
         VoIPVolumeInCH1 = value;
         if(value != 176)
             m_softPhone_list.at(i)->VoIPVolumeIn_RadioTest = VoIPVolumeInCH1;
         if (CODEC_CS42448->active)
-            CODEC_CS42448->Reg11_16hAINVolumeCtrl(VOIPCH1_I2S1,VoIPVolumeInCH1);
+            i2cwrite_ret = CODEC_CS42448->Reg11_16hAINVolumeCtrl(VOIPCH1_I2S1,VoIPVolumeInCH1);
         else if (CODEC_PCM3168A->active)
-            CODEC_PCM3168A->setInputGain(VOIPCH1_I2S1,VoIPVolumeInCH1);
+            i2cwrite_ret = CODEC_PCM3168A->setInputGain(VOIPCH1_I2S1,VoIPVolumeInCH1);
         break;
     case 2:
         VoIPVolumeInCH2 = value;
         if(value != 176)
             m_softPhone_list.at(i)->VoIPVolumeIn_RadioTest = VoIPVolumeInCH2;
         if (CODEC_CS42448->active)
-            CODEC_CS42448->Reg11_16hAINVolumeCtrl(VOIPCH2_I2S1,VoIPVolumeInCH2);
+            i2cwrite_ret = CODEC_CS42448->Reg11_16hAINVolumeCtrl(VOIPCH2_I2S1,VoIPVolumeInCH2);
         else if (CODEC_PCM3168A->active)
-            CODEC_PCM3168A->setInputGain(VOIPCH2_I2S1,VoIPVolumeInCH2);
+            i2cwrite_ret = CODEC_PCM3168A->setInputGain(VOIPCH2_I2S1,VoIPVolumeInCH2);
         break;
     case 3:
         VoIPVolumeInCH3 = value;
         if(value != 176)
             m_softPhone_list.at(i)->VoIPVolumeIn_RadioTest = VoIPVolumeInCH3;
         if (CODEC_CS42448->active)
-            CODEC_CS42448->Reg11_16hAINVolumeCtrl(VOIPCH3_I2S1,VoIPVolumeInCH3);
+            i2cwrite_ret = CODEC_CS42448->Reg11_16hAINVolumeCtrl(VOIPCH3_I2S1,VoIPVolumeInCH3);
         else if (CODEC_PCM3168A->active)
-            CODEC_PCM3168A->setInputGain(VOIPCH3_I2S1,VoIPVolumeInCH3);
+            i2cwrite_ret = CODEC_PCM3168A->setInputGain(VOIPCH3_I2S1,VoIPVolumeInCH3);
         break;
     case 4:
         VoIPVolumeInCH4 = value;
         if(value != 176)
             m_softPhone_list.at(i)->VoIPVolumeIn_RadioTest = VoIPVolumeInCH4;
         if (CODEC_CS42448->active)
-            CODEC_CS42448->Reg11_16hAINVolumeCtrl(VOIPCH4_I2S1,VoIPVolumeInCH4);
+            i2cwrite_ret = CODEC_CS42448->Reg11_16hAINVolumeCtrl(VOIPCH4_I2S1,VoIPVolumeInCH4);
         else if (CODEC_PCM3168A->active)
-            CODEC_PCM3168A->setInputGain(VOIPCH4_I2S1,VoIPVolumeInCH4);
+            i2cwrite_ret = CODEC_PCM3168A->setInputGain(VOIPCH4_I2S1,VoIPVolumeInCH4);
         break;
     }
     saveController(softPhoneID);
+    dataLoggerServer->createDataLog(i2cwrite_ret,QString("Set Codec Input Gain SoftphoneID %1, value %2").arg(softPhoneID).arg(value));
 }
 
 
 void iGate4x::updateOutputGain(uint8_t value, uint8_t softPhoneID)
 {
     int i = (softPhoneIDCheck(softPhoneID));
+    bool i2cwrite_ret = false;
     m_softPhone_list.at(i)->outputLevel = value;
     qDebug() << "updateOutputGain softPhoneID" << softPhoneID << value;
+
     switch (softPhoneID) {
     case 1:
         VoIPVolumeOutCH1 = value;
-        CODEC_CS42448->Reg08_0FhAOUTXVolumeCtrl(VOIPCH1_I2S1,VoIPVolumeOutCH1);
+        i2cwrite_ret = CODEC_CS42448->Reg08_0FhAOUTXVolumeCtrl(VOIPCH1_I2S1,VoIPVolumeOutCH1);
         break;
     case 2:
         VoIPVolumeOutCH2 = value;
-        CODEC_CS42448->Reg08_0FhAOUTXVolumeCtrl(VOIPCH2_I2S1,VoIPVolumeOutCH2);
+        i2cwrite_ret = CODEC_CS42448->Reg08_0FhAOUTXVolumeCtrl(VOIPCH2_I2S1,VoIPVolumeOutCH2);
         break;
     case 3:
         VoIPVolumeOutCH3 = value;
-        CODEC_CS42448->Reg08_0FhAOUTXVolumeCtrl(VOIPCH3_I2S1,VoIPVolumeOutCH3);
+        i2cwrite_ret = CODEC_CS42448->Reg08_0FhAOUTXVolumeCtrl(VOIPCH3_I2S1,VoIPVolumeOutCH3);
         break;
     case 4:
         VoIPVolumeOutCH4 = value;
-        CODEC_CS42448->Reg08_0FhAOUTXVolumeCtrl(VOIPCH4_I2S1,VoIPVolumeOutCH4);
+        i2cwrite_ret = CODEC_CS42448->Reg08_0FhAOUTXVolumeCtrl(VOIPCH4_I2S1,VoIPVolumeOutCH4);
         break;
     }
     saveController(softPhoneID);
+    dataLoggerServer->createDataLog(i2cwrite_ret,QString("Set Output Codec Gain SoftphoneID %1, value %2").arg(softPhoneID).arg(value));
 }
 
 
@@ -781,6 +786,7 @@ void iGate4x::updateDSPOutputGain(uint8_t value, uint8_t softPhoneID)
     }
 
     saveController(softPhoneID);
+    dataLoggerServer->createDataLog(INFO,QString("Set Output DSP Gain SoftphoneID %1, value %2").arg(softPhoneID).arg(value));
 }
 
 
@@ -879,6 +885,7 @@ void iGate4x::updateInputTone(bool state, float Frequency ,int Phase , float Lev
         }}
 
      saveToneData(softPhoneID);
+     dataLoggerServer->createDataLog(INFO,QString("Set Pilot Tone SoftphoneID %1, Frequency %2, Level %3, Phase %3").arg(softPhoneID).arg(Frequency).arg(Level).arg(Phase));
     }
 void iGate4x::updateServerTone(bool tonestate, bool pttstate, int timeoutptt, float ServerFrequency, int ServerPhase, float ServerLevel, uint8_t softPhoneID) {
 
@@ -951,6 +958,7 @@ void iGate4x::updateServerTone(bool tonestate, bool pttstate, int timeoutptt, fl
                           .arg(softPhoneID)
                           .arg(pttstate);
         SocketServer->sendMessageToSoftPhone(message, softPhoneID);
+        dataLoggerServer->createDataLog(INFO,QString("Radio PTT Test SoftphoneID %1, Frequency %2, Level %3, Phase %3").arg(softPhoneID).arg(ServerFrequency).arg(ServerLevel).arg(ServerPhase));
         }
     }
 }
@@ -1009,6 +1017,8 @@ void iGate4x::handleTimeout(uint8_t softPhoneID) {
                      << "Phase" << phase
                      << "Level" << level;
             saveTestRadioPage(softPhoneID);
+            dataLoggerServer->createDataLog(INFO,QString("Radio PTT Test Timeout SoftphoneID %1").arg(softPhoneID));
+
 //            qDebug() << "updateToneServerCh" << id
 ////                     << "Address" << addresses[id]
 //                     << "ToneServerState" << tone_state
@@ -1902,7 +1912,7 @@ void iGate4x::myConfigurate()
         RadioControllerCH3       = settings->value("RadioController/softPhoneID3",1).toInt();
         RadioControllerCH4       = settings->value("RadioController/softPhoneID4",1).toInt();
 
-        enableDataLogger         = settings->value("SIP_SETTINGS/enableDataLogger","true").toString().contains("true");
+        enableDataLogger         = settings->value("SIP_SETTINGS/enableDataLogger","false").toString().contains("true");
     }
     else{
         qDebug() << "Loading configuration from:" << cfgfile << " FILE NOT FOUND!";

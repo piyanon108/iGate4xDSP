@@ -87,18 +87,22 @@ void ChatClient::setDevice(QString _deviceName, QString _deviceAddress)
     deviceAddress = _deviceAddress;
 }
 void ChatClient::createDataLog(int state, QString dataLog)
-{
+{    
     QJsonObject jsonData;
     QString strState = "";
-    strState = (state == 0) ? "Error" : (state == 1) ? "Info" : "";
-    jsonData["menuID"] = "logInsert";
-    jsonData["deviceName"] = deviceName;
-    jsonData["deviceAddress"] = deviceAddress;
-    jsonData["dataLog"] = dataLog;
-    jsonData["state"] = strState;
+    if (m_pWebSocketClient == nullptr) return;
+    if (m_pWebSocketClient->state() == QAbstractSocket::ConnectedState)
+    {
+        strState = (state == 0) ? "Error" : (state == 1) ? "Info" : "";
+        jsonData["menuID"] = "logInsert";
+        jsonData["deviceName"] = deviceName;
+        jsonData["deviceAddress"] = deviceAddress;
+        jsonData["dataLog"] = dataLog;
+        jsonData["state"] = strState;
 
-    QJsonDocument jsonDoc(jsonData);
-    QByteArray jsonDataBytes = jsonDoc.toJson();
+        QJsonDocument jsonDoc(jsonData);
+        QByteArray jsonDataBytes = jsonDoc.toJson();
 
-    m_pWebSocketClient->sendBinaryMessage(jsonDataBytes);
+        m_pWebSocketClient->sendBinaryMessage(jsonDataBytes);
+    }
 }
