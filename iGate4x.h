@@ -15,7 +15,7 @@
 #include <QTimer>
 
 //DisableSnmp
-#define SWVERSION "7.5.2 DEBUG 2211024"
+#define SWVERSION "7.6 DEBUG 09122024"
 #define HWVERSION "iGate4CH DSP"
 // V7.3 Backup and Restore
 
@@ -115,6 +115,17 @@
 #define TONE_SERVER_LEVEL_CH4_ADDRESS MOD_TONE1_8_ALG0_SINEPHASEGAINALGS3005GAIN00_ADDR
 #define TONE_SERVER_PHASE_CH4_ADDRESS MOD_TONE1_8_ALG0_SINEPHASEGAINALGS3005INDEXFPHI00_ADDR
 #define TONE_SERVER_FREQUENCY_CH4_ADDRESS MOD_TONE1_8_ALG0_INCREMENT_ADDR
+
+#define REC_IN_LEVEL_CH1_ADDR MOD_SPILTER_REC_1_ALG0_STAGE1_MULTICTRLSPLITTERS3001GAIN1_ADDR
+#define REC_IN_LEVEL_CH2_ADDR MOD_SPILTER_REC_2_ALG0_STAGE1_MULTICTRLSPLITTERS3002GAIN1_ADDR
+#define REC_IN_LEVEL_CH3_ADDR MOD_SPILTER_REC_3_ALG0_STAGE1_MULTICTRLSPLITTERS3003GAIN1_ADDR
+#define REC_IN_LEVEL_CH4_ADDR MOD_SPILTER_REC_4_ALG0_STAGE1_MULTICTRLSPLITTERS3004GAIN1_ADDR
+
+#define REC_OUT_LEVEL_CH1_ADDR MOD_ROIPOUT_SPILTER_REC_1_ALG0_STAGE0_MULTICTRLSPLITTERS3005GAIN0_ADDR
+#define REC_OUT_LEVEL_CH2_ADDR MOD_ROIPOUT_SPILTER_REC_2_ALG0_STAGE0_MULTICTRLSPLITTERS3006GAIN0_ADDR
+#define REC_OUT_LEVEL_CH3_ADDR MOD_ROIPOUT_SPILTER_REC_3_ALG0_STAGE0_MULTICTRLSPLITTERS3007GAIN0_ADDR
+#define REC_OUT_LEVEL_CH4_ADDR MOD_ROIPOUT_SPILTER_REC_4_ALG0_STAGE0_MULTICTRLSPLITTERS3008GAIN0_ADDR
+
 ///////////////////////////////////
 
 #define GPIO1_OFFSET 284 //i2c-1 address 0x20
@@ -307,6 +318,15 @@ private:
     double VoIPVolumeOutDSPCH3 = 1;
     double VoIPVolumeOutDSPCH4 = 1;
 
+    double VoIPVolumeRecInDSPCH1 = 1; //0.0001 - 1  **** (-36)dB - 6dB 20logx
+    double VoIPVolumeRecInDSPCH2 = 1;
+    double VoIPVolumeRecInDSPCH3 = 1;
+    double VoIPVolumeRecInDSPCH4 = 1;
+    double VoIPVolumeRecOutDSPCH1 = 1; //0.0001 - 1  **** (-36)dB - 6dB 20logx
+    double VoIPVolumeRecOutDSPCH2 = 1;
+    double VoIPVolumeRecOutDSPCH3 = 1;
+    double VoIPVolumeRecOutDSPCH4 = 1;
+
     bool psuDCInStatus = false;
     bool psuBattStatus = false;
 
@@ -353,6 +373,10 @@ private:
         uint8_t inputLevel = 0;
         uint8_t outputLevel = 0;
         uint8_t outputDSPLevel = 0;
+        uint8_t recInputDSPLevel = 0;
+        uint8_t recOutputDSPLevel = 0;
+        QString recServerAddr1 = "";
+        QString recServerAddr2 = "";
         uint8_t trxMode = 0;
         bool  radioAutoInactive = 0;
         int radioMainStandby = 0;
@@ -770,6 +794,14 @@ private:
     double log_level_out4;
 
 
+    double level_inOut1;
+    double level_inOut2;
+    double level_inOut3;
+    double level_inOut4;
+    double log_level_inOut1;
+    double log_level_inOut2;
+    double log_level_inOut3;
+    double log_level_inOut4;
 
     bool serverInit = false;
 
@@ -790,7 +822,7 @@ private slots:
     void onNewControler(int softPhoneID, int channelID, int sipPort, QString sipUser, int keepAlivePeroid, int rtpStartPort, uint8_t wireConnectMode, bool mainRadioTransmitterUsed,
                         bool mainRadioReceiverUsed, uint8_t ServerClientMode, quint8  txScheduler, quint8  numConnection, float sidetone, float localSidetone, bool sqlAlwayOn, bool sqlActiveHigh,
                         QString deviceName, int inputLevel, int outputLevel, bool radioAutoInactive, int radioMainStandby, QString defaultEthernet, bool rxBestSignalEnable,
-                        uint8_t groupMute, uint8_t pttDelay, uint8_t outputDSPLevel, bool tone_state,float frequency,int phase,float level);
+                        uint8_t groupMute, uint8_t pttDelay, uint8_t outputDSPLevel, bool tone_state, float frequency, int phase, float level, uint8_t recInputDSPLevel, uint8_t recOutputDSPLevel, QString recServerAddr1, QString recServerAddr2);
     void onComponentCompleted(int softPhoneId,QString sipuser, int channelId);
 
     void startSoftphone(int softPhoneID, QWebSocket *socket);
@@ -814,6 +846,11 @@ private slots:
     void updateInputGain(uint8_t value, uint8_t softPhoneID);
     void updateOutputGain(uint8_t value, uint8_t softPhoneID);
     void updateDSPOutputGain(uint8_t value, uint8_t softPhoneID);
+    void updateDSPRecInputGain(int value, uint8_t softPhoneID);
+    void updateDSPRecOutputGain(int value, uint8_t softPhoneID);
+
+    void updateRecAddress(QString value,int index ,uint8_t softPhoneID);
+
     void updateRxBestSignalEnable(bool val, int softPhoneID);
     void updateGroupMute(uint8_t val, int softPhoneID);
     void updatePttDelay(uint8_t val, int softPhoneID);

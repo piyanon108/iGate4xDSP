@@ -16,6 +16,7 @@ public:
     bool upgradeDatabase();
     bool passwordVerify(QString password);
     bool getAllChannelByUserID(int softPhoneID);
+    bool addColumnRecorder();
     bool addColumnRxBestSignalEnable();
     bool ALTERTABLEcontrolerUri64Char();
     bool addColumnOutputDSPLevel();
@@ -61,7 +62,8 @@ signals:
     void updateChannelByRadioID(int radioID);
     void  onNewControler(int softPhoneID, int channelID, int sipPort, QString sipUser, int keepAlivePeroid, int rtpStartPort, uint8_t wireConnectMode, bool mainRadioTransmitterUsed, bool mainRadioReceiverUsed,
                         uint8_t ServerClientMode,quint8  txScheduler, quint8  numConnection, float sidetone, float localSidetone, bool sqlAlwayOn, bool sqlActiveHigh, QString deviceName, int inputLevel, int outputLevel, bool radioAutoInactive,int radioMainStandby, QString defaultEthernet, bool rxBestSignalEnable,
-                        uint8_t groupMute, uint8_t pttDelay, uint8_t outputDSPLevel, bool tone_state, float frequency, int phase , float level);
+                        uint8_t groupMute, uint8_t pttDelay, uint8_t outputDSPLevel, bool tone_state, float frequency, int phase , float level,
+                        uint8_t recInputDSPLevel, uint8_t recOutputDSPLevel, QString recServerAddr1, QString recServerAddr2);
     void newradio(int radioID,QString radioName, QString trxMode, QString uri, QString ipAddress, int r2sPeriod,int sipPort, QString frequenicy);
     void newchannel(int channelID,int visible, QString channelName, QString mainRadioType, int mainRadio01ID, int mainRadio02ID,
                     int standbyEnable, QString standbyRadioType, int standbyRadio01ID, int standbyRadio02ID, QString mainRadioName, QString standbyRadioName, int trxModeEnable);
@@ -93,7 +95,7 @@ public slots:
     bool updateChannelTxRxEnable(bool mainRadioTransmitterUsed, bool mainRadioReceiverUsed, int softPhoneID);
     bool updateControler(int sipPort, int rtpStartPort, int keepAlivePeroid, QString sipUser, int channelID, int softPhoneID, bool WireConnectMode, bool mainRadioReceiverUsed, bool mainRadioTransmitterUsed,
                          uint8_t trxMode, uint8_t ServerClientMode, uint8_t txScheduler, bool sqlActiveHigh, uint8_t numConnection, double sidetone, bool sqlAlwayOn, QString deviceName, uint8_t inputLevel,
-                         uint8_t outputLevel, bool radioAutoInactive, int radioMainStandby, QString defaultEthernet, uint8_t outputDSPLevel);
+                         uint8_t outputLevel, bool radioAutoInactive, int radioMainStandby, QString defaultEthernet, uint8_t outputDSPLevel, uint8_t recInputDSPLevel, uint8_t recOutputDSPLevel, QString recServerAddr1, QString recServerAddr2);
     bool updateAllowList(int softPhoneID, QStringList uriAllowList);
 
     bool updateControler(bool Tone_state,float Tone_frequency, int Tone_phase,int Tnone_level, int softPhoneID);

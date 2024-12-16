@@ -27,7 +27,7 @@ public:
     void broadcastMessageNodeState(uint8_t nodeID, QString conn, QString duration, QString trxStatus, QString radioStatus, QString vswr, QString durationRx, QString connRx, QString radioStatusRx,int softPhoneID);
     void broadcastSystemMessage(QString nodeSelected, int softPhoneID);
     bool autoConnectEnable = false;
-    QWebSocket *m_pWebSocketClient;
+    QWebSocket *m_pWebSocketClient = nullptr;
 
     void setDevice(QString _deviceName, QString _deviceAddress);
     void createDataLog(int state, QString dataLog);

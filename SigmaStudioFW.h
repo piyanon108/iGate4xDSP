@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <QString>
 //#include <iGate4CH_DSP/selfbootdata.h>
-#include <iGate4CH_DSP/FirmwareV3/DesignDSP_IC_1_PARAM.h>
+#include <iGate4CH_DSP/DesignDSP_REC_V1/DesignDSP_REC_V1_IC_1_PARAM.h>
 #include <SPI.h>
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -70,6 +70,7 @@ public:
 
     void setFIRfilter(int fir_start_addr, int fir_filter_length, double* coefficients);
 
+    void setDSPSplitVolume(uint16_t address, double value);
 private:
     void saveLoadWrite0x6000(double dValue);
     void blokcWrite(uint16_t address);

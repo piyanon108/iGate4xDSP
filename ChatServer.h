@@ -78,7 +78,8 @@ public:
     void sendToWebMessageClient(QString message,QWebSocket *webClient);
     void sendToIGateGroupMNGClient(QString message,int softPhoneID);
     void updateHomeInput(QString deviceName, QString sipUser, uint8_t inputLevel, uint8_t outputLevel, QWebSocket *newClient, uint16_t keepAlivePeroid, uint16_t sipPort, uint8_t portInterface, uint8_t txScheduler, uint8_t invitemode, float sidetone, int defaultEthernet, int testModeEnable, int softPhoneID, bool mainRadioTransmitterUsed,
-                         bool mainRadioReceiverUsed, bool radioAutoInactive, int radioMainStandby, float localSidetone, int pttDelay, uint8_t outputDSPgain, bool state, float Frequency ,int Phase , float Level );
+                         bool mainRadioReceiverUsed, bool radioAutoInactive, int radioMainStandby, float localSidetone, int pttDelay, uint8_t outputDSPgain, bool state, float Frequency ,int Phase , float Level,
+                         uint8_t recInputDSPLevel, uint8_t recOutputDSPLevel, QString recServerAddr1, QString recServerAddr2);
 
     void updateToneDataClient(bool state, float Frequency ,int Phase , float Level,int softPhoneID,QWebSocket *newClient);
     void updateHomeED137Cfg(uint8_t nodeID, uint8_t nodeType, QString nodeName, QString ipAddress, QString sipPort, uint8_t active, QWebSocket *newClient, QString frequency, QString sqlLevel, QString nodeNameRx, QString ipAddressRx, QString sipPortRx, QString frequencyRx, QString sqlLevelRx, QString channelName, int rfPower);
@@ -90,7 +91,7 @@ public:
     void updateAllowedUri(uint8_t softPhoneID, uint8_t numConn, QString uri1, QString uri2, QString uri3, QString uri4, QString uri5, QString uri6, QString uri7, QString uri8, QWebSocket *newClient);
     void updateClientConnStatus(uint8_t connNum, QString TxRxStatus, QString lastPtt, QWebSocket *newClient, int softPhoneID);
     void broadcastMessageNodeState(uint8_t nodeID, QString conn, QString duration, QString trxStatus, QString radioStatus, QString vswr, QString durationRx, QString connRx, QString radioStatusRx, int softPhoneID);
-    void broadcastVUMeter(double in1,double in2,double in3,double in4,double out1,double out2,double out3,double out4, double in1dB,double in2dB,double in3dB,double in4dB,double out1dB,double out2dB,double out3dB,double out4dB);
+    void broadcastVUMeter(double in1,double in2,double in3,double in4,double out1,double out2,double out3,double out4, double in1dB,double in2dB,double in3dB,double in4dB,double out1dB,double out2dB,double out3dB,double out4dB,double inOut1,double inOut2,double inOut3,double inOut4,double inOut1dB,double inOut2dB,double inOut3dB,double inOut4dB);
     void broadcastMessageStatus(uint8_t connNum, QString TxRxStatus, QString lastPtt, int softPhoneID);
     void broadcastGpioInStatus(uint8_t gpio1Val, uint8_t gpio2Val, uint8_t gpio3Val, uint8_t gpio4Val, uint8_t gpio1OutVal, uint8_t gpio2OutVal, uint8_t gpio3OutVal, uint8_t gpio4OutVal);
     void updateGpioInStatus(uint8_t gpio1Val,uint8_t gpio2Val, uint8_t gpio3Val, uint8_t gpio4Val,uint8_t gpio1OutVal,uint8_t gpio2OutVal, uint8_t gpio3OutVal, uint8_t gpio4OutVal,QWebSocket *newClient);
@@ -141,6 +142,9 @@ signals:
     void updateInputGain(uint8_t value, uint8_t softPhoneID);
     void updateOutputGain(uint8_t value, uint8_t softPhoneID);
     void updateDSPOutputGain(uint8_t value, uint8_t softPhoneID);
+    void updateDSPRecInputGain(int value, uint8_t softPhoneID);
+    void updateDSPRecOutputGain(int value, uint8_t softPhoneID);
+    void updateRecAddress(QString value,int index ,uint8_t softPhoneID);
  // TONE
     void updateInputTone(bool state, float Frequency ,int Phase , float Level , uint8_t softPhoneID);
     void updateServerTone(bool tonestate, bool pttstate,int timeoutptt, float ServerFrequency, int ServerPhase, float ServerLevel, uint8_t softPhoneID);

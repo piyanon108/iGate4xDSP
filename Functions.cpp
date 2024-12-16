@@ -720,7 +720,7 @@ void iGate4x::updateInputGain(uint8_t value, uint8_t softPhoneID)
         break;
     }
     saveController(softPhoneID);
-    dataLoggerServer->createDataLog(i2cwrite_ret,QString("Set Codec Input Gain SoftphoneID %1, value %2").arg(softPhoneID).arg(value));
+    dataLoggerServer->createDataLog(i2cwrite_ret,QString("Set Codec Input Gain SoftphoneID %1, value index: %2").arg(softPhoneID).arg(value));
 }
 
 
@@ -750,14 +750,15 @@ void iGate4x::updateOutputGain(uint8_t value, uint8_t softPhoneID)
         break;
     }
     saveController(softPhoneID);
-    dataLoggerServer->createDataLog(i2cwrite_ret,QString("Set Output Codec Gain SoftphoneID %1, value %2").arg(softPhoneID).arg(value));
+    dataLoggerServer->createDataLog(i2cwrite_ret,QString("Set Output Codec Gain SoftphoneID %1, value index: %2").arg(softPhoneID).arg(value));
 }
 
 
-void iGate4x::updateDSPOutputGain(uint8_t value, uint8_t softPhoneID)
+void iGate4x::updateDSPRecOutputGain(int value, uint8_t softPhoneID)
 {
     int i = (softPhoneIDCheck(softPhoneID));
-    m_softPhone_list.at(i)->outputDSPLevel = value;
+    m_softPhone_list.at(i)->recOutputDSPLevel = value;
+    value = value - 12;
     double setValue = 1.0;
     double dbValue = 0;
     if (value == 0) dbValue = 0;
@@ -766,29 +767,112 @@ void iGate4x::updateDSPOutputGain(uint8_t value, uint8_t softPhoneID)
     else {
         setValue = pow(10,dbValue/20.0);
     }
-    switch (softPhoneID) {
+    qDebug() << "updateDSPRecOutputGain" << dbValue << "dB";
+    switch (softPhoneID)
+    {
     case 1:
         VoIPVolumeOutDSPCH1 = setValue;
-        SigmaFirmWareDownLoad->setModuleSingleVolume(AUDIOOUT_VOLUME_CH1_TARGET_ADDR,AUDIOOUT_VOLUME_CH1_MOD_ADDR,AUDIOOUT_VOLUME_CH1_MOD_VALUE,VoIPVolumeOutDSPCH1);
+        SigmaFirmWareDownLoad->setDSPSplitVolume(REC_OUT_LEVEL_CH1_ADDR,setValue);
         break;
     case 2:
         VoIPVolumeOutDSPCH2 = setValue;
-        SigmaFirmWareDownLoad->setModuleSingleVolume(AUDIOOUT_VOLUME_CH2_TARGET_ADDR,AUDIOOUT_VOLUME_CH2_MOD_ADDR,AUDIOOUT_VOLUME_CH2_MOD_VALUE,VoIPVolumeOutDSPCH2);
+        SigmaFirmWareDownLoad->setDSPSplitVolume(REC_OUT_LEVEL_CH2_ADDR,setValue);
         break;
     case 3:
         VoIPVolumeOutDSPCH3 = setValue;
-        SigmaFirmWareDownLoad->setModuleSingleVolume(AUDIOOUT_VOLUME_CH3_TARGET_ADDR,AUDIOOUT_VOLUME_CH3_MOD_ADDR,AUDIOOUT_VOLUME_CH3_MOD_VALUE,VoIPVolumeOutDSPCH3);
+        SigmaFirmWareDownLoad->setDSPSplitVolume(REC_OUT_LEVEL_CH3_ADDR,setValue);
         break;
     case 4:
         VoIPVolumeOutDSPCH4 = setValue;
-        SigmaFirmWareDownLoad->setModuleSingleVolume(AUDIOOUT_VOLUME_CH4_TARGET_ADDR,AUDIOOUT_VOLUME_CH4_MOD_ADDR,AUDIOOUT_VOLUME_CH4_MOD_VALUE,VoIPVolumeOutDSPCH4);
+        SigmaFirmWareDownLoad->setDSPSplitVolume(REC_OUT_LEVEL_CH4_ADDR,setValue);
         break;
     }
 
     saveController(softPhoneID);
-    dataLoggerServer->createDataLog(INFO,QString("Set Output DSP Gain SoftphoneID %1, value %2").arg(softPhoneID).arg(value));
+    dataLoggerServer->createDataLog(INFO,QString("Set Output DSP Gain SoftphoneID %1, value %2 dB").arg(softPhoneID).arg(dbValue));
 }
+void iGate4x::updateRecAddress(QString value,int index ,uint8_t softPhoneID)
+{
+    int i = (softPhoneIDCheck(softPhoneID));
+    if (index == 1)
+        m_softPhone_list.at(i)->recServerAddr1 = value;
+    else
+        m_softPhone_list.at(i)->recServerAddr2 = value;
+    saveController(softPhoneID);
 
+}
+void iGate4x::updateDSPRecInputGain(int value, uint8_t softPhoneID)
+{
+    int i = (softPhoneIDCheck(softPhoneID));
+    m_softPhone_list.at(i)->recInputDSPLevel = value;
+    value = value - 12;
+    double setValue = 1.0;
+    double dbValue = 0;
+    if (value == 0) dbValue = 0;
+    else dbValue =  double(value/(-2.0));
+    if (value == 0) setValue = 1;
+    else {
+        setValue = pow(10,dbValue/20.0);
+    }
+    qDebug() << "updateDSPRecOutputGain" << dbValue << "dB";
+    switch (softPhoneID)
+    {
+    case 1:
+        VoIPVolumeRecInDSPCH1 = setValue;
+        SigmaFirmWareDownLoad->setDSPSplitVolume(REC_IN_LEVEL_CH1_ADDR,setValue);
+        break;
+    case 2:
+        VoIPVolumeRecInDSPCH2 = setValue;
+        SigmaFirmWareDownLoad->setDSPSplitVolume(REC_IN_LEVEL_CH2_ADDR,setValue);
+        break;
+    case 3:
+        VoIPVolumeRecInDSPCH3 = setValue;
+        SigmaFirmWareDownLoad->setDSPSplitVolume(REC_IN_LEVEL_CH3_ADDR,setValue);
+        break;
+    case 4:
+        VoIPVolumeRecInDSPCH4 = setValue;
+        SigmaFirmWareDownLoad->setDSPSplitVolume(REC_IN_LEVEL_CH4_ADDR,setValue);
+        break;
+    }
+
+    saveController(softPhoneID);
+    dataLoggerServer->createDataLog(INFO,QString("Set Output DSP Gain SoftphoneID %1, value %2 dB").arg(softPhoneID).arg(dbValue));
+}
+void iGate4x::updateDSPOutputGain(uint8_t value, uint8_t softPhoneID)
+{    int i = (softPhoneIDCheck(softPhoneID));
+     m_softPhone_list.at(i)->outputDSPLevel = value;
+     double setValue = 1.0;
+     double dbValue = 0;
+     if (value == 0) dbValue = 0;
+     else dbValue =  double(value/(-2));
+     if (value == 0) setValue = 1;
+     else {
+         setValue = pow(10,dbValue/20.0);
+     }
+     switch (softPhoneID)
+     {
+     case 1:
+         VoIPVolumeOutDSPCH1 = setValue;
+         SigmaFirmWareDownLoad->setModuleSingleVolume(AUDIOOUT_VOLUME_CH1_TARGET_ADDR,AUDIOOUT_VOLUME_CH1_MOD_ADDR,AUDIOOUT_VOLUME_CH1_MOD_VALUE,VoIPVolumeOutDSPCH1);
+         break;
+     case 2:
+         VoIPVolumeOutDSPCH2 = setValue;
+         SigmaFirmWareDownLoad->setModuleSingleVolume(AUDIOOUT_VOLUME_CH2_TARGET_ADDR,AUDIOOUT_VOLUME_CH2_MOD_ADDR,AUDIOOUT_VOLUME_CH2_MOD_VALUE,VoIPVolumeOutDSPCH2);
+         break;
+     case 3:
+         VoIPVolumeOutDSPCH3 = setValue;
+         SigmaFirmWareDownLoad->setModuleSingleVolume(AUDIOOUT_VOLUME_CH3_TARGET_ADDR,AUDIOOUT_VOLUME_CH3_MOD_ADDR,AUDIOOUT_VOLUME_CH3_MOD_VALUE,VoIPVolumeOutDSPCH3);
+         break;
+     case 4:
+         VoIPVolumeOutDSPCH4 = setValue;
+         SigmaFirmWareDownLoad->setModuleSingleVolume(AUDIOOUT_VOLUME_CH4_TARGET_ADDR,AUDIOOUT_VOLUME_CH4_MOD_ADDR,AUDIOOUT_VOLUME_CH4_MOD_VALUE,VoIPVolumeOutDSPCH4);
+         break;
+     }
+
+     saveController(softPhoneID);
+     dataLoggerServer->createDataLog(INFO,QString("Set Output DSP Gain SoftphoneID %1, value %2 dB").arg(softPhoneID).arg(dbValue));
+
+}
 
 void iGate4x::updateInputTone(bool state, float Frequency ,int Phase , float Level , uint8_t softPhoneID)
 {
@@ -1640,10 +1724,14 @@ void iGate4x::saveController(int softPhoneID)
     bool radioAutoInactive = m_softPhone_list.at(i)->radioAutoInactive;
     int radioMainStandby = m_softPhone_list.at(i)->radioMainStandby;
     QString defaultEthernet = m_softPhone_list.at(i)->defaultEthernet;
+    uint8_t recInputDSPLevel = m_softPhone_list.at(i)->recInputDSPLevel;
+    uint8_t recOutputDSPLevel = m_softPhone_list.at(i)->recOutputDSPLevel;
+    QString recServerAddr1 = m_softPhone_list.at(i)->recServerAddr1;
+    QString recServerAddr2 = m_softPhone_list.at(i)->recServerAddr2;
 
     myDatabase->updateControler( sipPort, rtpStartPort, keepAlivePeroid, sipUser, channelID, softPhoneID, WireConnectMode, mainRadioReceiverUsed, mainRadioTransmitterUsed, trxMode,
                                  ServerClientMode, txScheduler, sqlActiveHigh, numConnection, sidetone, sqlAlwayOn, deviceName, inputLevel, outputLevel,radioAutoInactive,radioMainStandby,
-                                 defaultEthernet,outputDSPLevel);
+                                 defaultEthernet,outputDSPLevel,recInputDSPLevel,recOutputDSPLevel,recServerAddr1,recServerAddr2);
 }
 void iGate4x::saveToneData(int softPhoneID)
 {

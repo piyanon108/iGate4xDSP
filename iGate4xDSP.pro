@@ -51,9 +51,9 @@ HEADERS += \
     SPI.h \
     SigmaStudioFW.h \
     SnmpStack.h \
-    iGate4CH_DSP/FirmwareV3/DesignDSP_IC_1.h \
-    iGate4CH_DSP/FirmwareV3/DesignDSP_IC_1_PARAM.h \
-    iGate4CH_DSP/FirmwareV3/DesignDSP_IC_1_REG.h \
+    iGate4CH_DSP/DesignDSP_REC_V1/DesignDSP_REC_V1_IC_1.h \
+    iGate4CH_DSP/DesignDSP_REC_V1/DesignDSP_REC_V1_IC_1_PARAM.h \
+    iGate4CH_DSP/DesignDSP_REC_V1/DesignDSP_REC_V1_IC_1_REG.h \
     iGate4x.h \
     linux_spi.h \
     sampleI2CReadWrite.h

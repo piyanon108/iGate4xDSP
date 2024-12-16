@@ -102,16 +102,20 @@ void ChatServer::onNewConnection()
 //var obj = JSON.parse('{"menuID":"input", "name":"S4_1", "inputgain":1, "outputgain":10}');
 //var obj = JSON.parse('{"menuID":"nodeCfg", "nodeID":2, "nodeType":0, "nodeName":"t6tr1", "ipAddress":"10.45.110.11", "sipPort":"5060", "active":1}');
 void ChatServer::updateHomeInput(QString deviceName, QString sipUser, uint8_t inputLevel, uint8_t outputLevel, QWebSocket *newClient, uint16_t keepAlivePeroid, uint16_t sipPort, uint8_t portInterface ,uint8_t txScheduler,uint8_t invitemode,float sidetone, int defaultEthernet, int testModeEnable, int softPhoneID,bool mainRadioTransmitterUsed,bool mainRadioReceiverUsed, bool radioAutoInactive, int radioMainStandby, float localSidetone,
-                                 int pttDelay, uint8_t outputDSPgain,bool state, float Frequency ,int Phase , float Level)
+                                 int pttDelay, uint8_t outputDSPgain,bool state, float Frequency ,int Phase , float Level,
+                                 uint8_t recInputDSPLevel, uint8_t recOutputDSPLevel, QString recServerAddr1, QString recServerAddr2)
 {
     /*bool state, float Frequency ,int Phase , int Level*/
     QString message = QString("{\"menuID\":\"input\", \"sipUser\":\"%1\", \"sipPort\":\"%2\", \"keepAlivePeroid\":\"%3\", \"inputgain\":%4, \"outputgain\":%5, \"portInterface\":%6, \"pttScheduler\":%7, "
                               "\"invitemode\":%8, \"sidetone\":%9, \"defaultEthernet\":%10, \"testModeEnable\":%11, \"deviceName\":\"%12\", \"softPhoneID\":%13, \"mainRadioTransmitterUsed\":%14, "
                               "\"mainRadioReceiverUsed\":%15, \"radioAutoInactive\":%16, \"radioMainStandby\":%17, \"localSidetone\":%18, \"pttDelay\":%19, \"outputDSPgain\":%20,"
-                              "\"outputToneState\":%21, \"outputToneFrequency\":%22, \"outputTonePhase\":%23, \"outputToneLevel\":%24}")
+                              "\"outputToneState\":%21, \"outputToneFrequency\":%22, \"outputTonePhase\":%23, \"outputToneLevel\":%24, "
+                              "\"recInputDSPLevel\":%25, \"recOutputDSPLevel\":%26, \"recServerAddr1\":\"%27\", \"recServerAddr2\":\"%28\" "
+                              "}")
             .arg(sipUser).arg(sipPort).arg(keepAlivePeroid).arg(inputLevel).arg(outputLevel).arg(portInterface).arg(txScheduler).arg(invitemode).arg(int(sidetone*10)/2).arg(defaultEthernet)
             .arg(testModeEnable).arg(deviceName).arg(softPhoneID).arg(mainRadioTransmitterUsed).arg(mainRadioReceiverUsed).arg(radioAutoInactive).arg(radioMainStandby).arg(localSidetone).arg(pttDelay)
-            .arg(outputDSPgain) .arg(state).arg(Frequency).arg(Phase).arg(Level);
+            .arg(outputDSPgain) .arg(state).arg(Frequency).arg(Phase).arg(Level)
+            .arg (recInputDSPLevel).arg(recOutputDSPLevel).arg(recServerAddr1).arg(recServerAddr2);
     newClient->sendTextMessage(message);
 }
 
@@ -209,7 +213,8 @@ void ChatServer::broadcastMessageNodeState(uint8_t nodeID, QString conn, QString
         pClient->sendTextMessage(message);
     }
 }
-void ChatServer::broadcastVUMeter(double in1,double in2,double in3,double in4,double out1,double out2,double out3,double out4, double in1dB,double in2dB,double in3dB,double in4dB,double out1dB,double out2dB,double out3dB,double out4dB)
+void ChatServer::broadcastVUMeter(double in1,double in2,double in3,double in4,double out1,double out2,double out3,double out4, double in1dB,double in2dB,double in3dB,double in4dB,double out1dB,double out2dB,double out3dB,double out4dB,
+                                  double inOut1,double inOut2,double inOut3,double inOut4,double inOut1dB,double inOut2dB,double inOut3dB,double inOut4dB)
 {
     QString message = QString("{\"menuID\":\"broadcastVUMeter\", "
                               "\"in1\"  :%1, "
@@ -227,12 +232,22 @@ void ChatServer::broadcastVUMeter(double in1,double in2,double in3,double in4,do
                               "\"out1dB\"   :%13, "
                               "\"out2dB\"   :%14, "
                               "\"out3dB\"   :%15, "
-                              "\"out4dB\"   :%16 "
+                              "\"out4dB\"   :%16, "
+                              "\"inOut1\" :%17, "
+                              "\"inOut2\" :%18, "
+                              "\"inOut3\" :%19, "
+                              "\"inOut4\" :%20, "
+                              "\"inOut1dB\"   :%21, "
+                              "\"inOut2dB\"   :%22, "
+                              "\"inOut3dB\"   :%23, "
+                              "\"inOut4dB\"   :%24 "
                               "}")
             .arg(in1).arg(in2).arg(in3).arg(in4)
             .arg(in1dB).arg(in2dB).arg(in3dB).arg(in4dB)
             .arg(out1).arg(out2).arg(out3).arg(out4)
             .arg(out1dB).arg(out2dB).arg(out3dB).arg(out4dB)
+            .arg(inOut1).arg(inOut2).arg(inOut3).arg(inOut4)
+            .arg(inOut1dB).arg(inOut2dB).arg(inOut3dB).arg(inOut4dB)
             ;
     Q_FOREACH (QWebSocket *pClient, m_WebSocketVUClients)
     {
@@ -979,6 +994,29 @@ void ChatServer::commandProcess(QString message, QWebSocket *pSender){
         uint8_t value = QJsonValue(command["outputGainIndex"]).toInt();
         uint8_t softPhoneID = QJsonValue(command["softPhoneID"]).toInt();
         emit updateDSPOutputGain(value,softPhoneID);
+        broadcastMessage(message);
+    }
+
+    else if (getCommand == ("updateDSPRecInputGain"))
+    {
+        uint8_t value = QJsonValue(command["inputGainIndex"]).toInt();
+        uint8_t softPhoneID = QJsonValue(command["softPhoneID"]).toInt();
+        emit updateDSPRecInputGain(value,softPhoneID);
+        broadcastMessage(message);
+    }
+    else if (getCommand == ("updateRecAddress"))
+    {
+        QString value = QJsonValue(command["value"]).toString();
+        int index = QJsonValue(command["index"]).toInt();
+        uint8_t softPhoneID = QJsonValue(command["softPhoneID"]).toInt();
+        emit updateRecAddress(value,index,softPhoneID);
+        broadcastMessage(message);
+    }
+    else if (getCommand == ("updateDSPRecOutputGain"))
+    {
+        uint8_t value = QJsonValue(command["outputGainIndex"]).toInt();
+        uint8_t softPhoneID = QJsonValue(command["softPhoneID"]).toInt();
+        emit updateDSPRecOutputGain(value,softPhoneID);
         broadcastMessage(message);
     }
     else if (getCommand == ("disconnect"))

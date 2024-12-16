@@ -66,7 +66,7 @@ int Database::checkContollerTable()
 void Database::fixDatabase()
 {
     system("systemctl restart apache2");
-    QString commandRestorSQL = QString("mysql -uroot -pOTL324$ %1 < /etc/autobackup.sql").arg(_dbName);
+    QString commandRestorSQL = QString("mysql -uroot %1 < /etc/autobackup.sql").arg(_dbName);
     system(commandRestorSQL.toStdString().c_str());
     system("sync");
     qDebug() << "fixDatabase";
@@ -80,7 +80,7 @@ void Database::autoBackup()
 {
     autoBackupDateTimer->stop();
     QString CurrentdateTime = QDateTime::currentDateTime().toString("yyMMdd hhmmss");
-    QString commandRestorSQL = QString("mysqldump -uroot -pOTL324$ %1 > /etc/autobackup.sql").arg(_dbName);
+    QString commandRestorSQL = QString("mysqldump -uroot %1 > /etc/autobackup.sql").arg(_dbName);
     system(commandRestorSQL.toStdString().c_str());
     system("sync");
     qDebug() << CurrentdateTime << "Auto Backup";
@@ -89,7 +89,7 @@ void Database::restoreDatabase()
 {
     system("systemctl restart apache2");
     system("tar -xf /var/www/html/uploads/database.tar -C /");
-    QString commandRestorSQL = QString("mysql -uroot -pOTL324$ %1 < /tmp/database/igate4ch_backup.bin").arg(_dbName);
+    QString commandRestorSQL = QString("mysql -uroot %1 < /tmp/database/igate4ch_backup.bin").arg(_dbName);
     system(commandRestorSQL.toStdString().c_str());
     system("rm -f /var/www/html/database/*");
     system("rm -f /var/www/html/uploads/database.tar");
@@ -256,15 +256,19 @@ bool Database::database_createConnection()
 }
 bool Database::updateControler(int sipPort,int rtpStartPort,int keepAlivePeroid,QString sipUser,int channelID,int softPhoneID,bool WireConnectMode,bool mainRadioReceiverUsed,bool mainRadioTransmitterUsed,uint8_t trxMode,
                                uint8_t ServerClientMode,uint8_t txScheduler,bool sqlActiveHigh,uint8_t numConnection,double sidetone,bool sqlAlwayOn,QString deviceName,uint8_t inputLevel,uint8_t outputLevel,bool radioAutoInactive,
-                               int radioMainStandby, QString defaultEthernet, uint8_t outputDSPLevel)
+                               int radioMainStandby, QString defaultEthernet, uint8_t outputDSPLevel, uint8_t recInputDSPLevel, uint8_t recOutputDSPLevel, QString recServerAddr1, QString recServerAddr2)
 {
     QString query = QString("UPDATE controler SET sipPort=%1 , rtpStartPort=%2 , keepAlivePeroid=%3 , sipUser='%4' , channelID=%5 , WireConnectMode=%6 , mainRadioReceiverUsed=%7 , mainRadioTransmitterUsed=%8 ,"
                             " trxMode=%9 , ServerClientMode=%10 , txScheduler=%11 , sqlActiveHigh=%12 , numConnection=%13 ,"
                             "sidetone=%14 , sqlAlwayOn=%15 , deviceName='%16' , inputLevel=%17 , outputLevel=%18  , "
-                            "radioAutoInactive=%19, radioMainStandby=%20, defaultEthernet='%21', outputDSPLevel=%22 WHERE softPhoneID=%23")
+                            "radioAutoInactive=%19, radioMainStandby=%20, defaultEthernet='%21', outputDSPLevel=%22, "
+                            "recorderAddress1='%23', recorderAddress2='%24', recInputLevel='%25', recOutputLevel=%26 "
+                            "WHERE softPhoneID=%27")
             .arg(sipPort).arg(rtpStartPort).arg(keepAlivePeroid).arg(sipUser).arg(channelID).arg(WireConnectMode).arg(mainRadioReceiverUsed).arg(mainRadioTransmitterUsed)
             .arg(trxMode).arg(ServerClientMode).arg(txScheduler).arg(sqlActiveHigh).arg(numConnection).arg(sidetone).arg(sqlAlwayOn).arg(deviceName).arg(inputLevel)
-            .arg(outputLevel).arg(radioAutoInactive).arg(radioMainStandby).arg(defaultEthernet).arg(outputDSPLevel).arg(softPhoneID);
+            .arg(outputLevel).arg(radioAutoInactive).arg(radioMainStandby).arg(defaultEthernet).arg(outputDSPLevel)
+            .arg(recServerAddr1).arg(recServerAddr2).arg(recInputDSPLevel).arg(recOutputDSPLevel)
+            .arg(softPhoneID);
 //    qDebug() << query;
     if (!db.open()) {
         qDebug() << "database error! database can not open.";
@@ -872,7 +876,40 @@ bool Database::addColumnToneServer()
     autoBackupTimerStart();
     return true;
 }
+bool Database::addColumnRecorder()
+{
+    bool notExist = false;
+    QString query = "SELECT recorderAddress1 FROM controler LIMIT 1";
 
+    if (!db.open()) {
+        qDebug() << "database error! database can not open.";
+        emit mysqlError();
+        restartMysql();
+        return false;
+    }
+    //qDebug() << query;
+    QSqlQuery qry;
+    qry.prepare(query);
+    if (!qry.exec()){
+        qDebug() << qry.lastError();
+        notExist = true;
+    }
+
+    if (notExist){
+        query = QString("ALTER TABLE controler ADD COLUMN ("
+                        "recorderAddress1 VARCHAR(32) NOT NULL DEFAULT '', "
+                        "recorderAddress2 VARCHAR(32) NOT NULL DEFAULT '', "
+                        "recInputLevel DOUBLE(5,2) NOT NULL DEFAULT 0.0, "
+                        "recOutputLevel DOUBLE(5,2) NOT NULL DEFAULT 0.0 "
+                        ")");
+        qry.prepare(query);
+        if (!qry.exec()){
+            qDebug() << qry.lastError();
+        }
+    }
+    db.close();
+    return true;
+}
 bool Database::addColumnRxBestSignalEnable()
 {
     bool notExist = false;
@@ -1035,7 +1072,12 @@ bool Database::getNewControlerData()
     uint8_t groupMute;
     uint8_t pttDelay;
     uint8_t outputDSPLevel;
-    QString query = QString("SELECT id, sipUser, sipPort, keepAlivePeroid, rtpStartPort, channelID, WireConnectMode, mainRadioTransmitterUsed, mainRadioReceiverUsed, ServerClientMode,txScheduler, numConnection, sidetone, sqlAlwayOn, sqlActiveHigh, deviceName, inputLevel, outputLevel, radioAutoInactive, radioMainStandby,defaultEthernet, rxBestSignalEnable, localSidetone, groupMute, pttDelay, outputDSPLevel,outputToneState, outputToneFrequency, outputTonePhase ,outputToneLevel FROM controler ORDER BY id ASC LIMIT 8;");
+    uint8_t recInputDSPLevel;
+    uint8_t recOutputDSPLevel;
+    QString recServerAddr1;
+    QString recServerAddr2;
+    QString query = QString("SELECT id, sipUser, sipPort, keepAlivePeroid, rtpStartPort, channelID, WireConnectMode, mainRadioTransmitterUsed, mainRadioReceiverUsed, ServerClientMode,txScheduler, numConnection, sidetone, sqlAlwayOn, sqlActiveHigh, deviceName, inputLevel, outputLevel, radioAutoInactive, radioMainStandby,defaultEthernet, rxBestSignalEnable, localSidetone, groupMute, pttDelay, outputDSPLevel,outputToneState, outputToneFrequency, outputTonePhase ,outputToneLevel, "
+                            "recorderAddress1, recorderAddress2, recInputLevel, recOutputLevel FROM controler ORDER BY id ASC LIMIT 8;");
     if (!db.open())
     {
         qDebug() << "database error! database can not open.";
@@ -1082,10 +1124,14 @@ bool Database::getNewControlerData()
             outputToneFrequency = qry.value(27).toDouble();
             outputTonePhase    = qry.value(28).toInt();
             outputToneLevel    = qry.value(29).toDouble();
+            recServerAddr1  = qry.value(30).toString();
+            recServerAddr2  = qry.value(31).toString();
+            recInputDSPLevel    = qry.value(32).toInt();
+            recOutputDSPLevel    = qry.value(33).toDouble();
 //            qDebug() << "outputfrequency" << outputToneFrequency << "Level" << outputTonePhase << "softPhoneID" << softPhoneID;
             emit onNewControler(softPhoneID, channelID, sipPort, sipUser, keepAlivePeroid, rtpStartPort,WireConnectMode, mainRadioTransmitterUsed, mainRadioReceiverUsed, ServerClientMode,txScheduler,
                                 numConnection,sidetone,localSidetone,sqlAlwayOn,sqlActiveHigh, deviceName,inputLevel,outputLevel,radioAutoInactive,radioMainStandby, defaultEthernet,rxBestSignalEnable,groupMute,
-                                pttDelay,outputDSPLevel,outputToneState,outputToneFrequency,outputTonePhase,outputToneLevel);
+                                pttDelay,outputDSPLevel,outputToneState,outputToneFrequency,outputTonePhase, outputToneLevel,recInputDSPLevel, recOutputDSPLevel, recServerAddr1, recServerAddr2);
         }
     }
     db.close();

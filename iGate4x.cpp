@@ -207,14 +207,15 @@ void iGate4x::initServer(int index)
     else {
         printf("*******myDatabase->Ok*******");
     }
+    myDatabase->addColumnRecorder();
     myDatabase->addColumnRxBestSignalEnable();
     myDatabase->addColumnOutputDSPLevel();
     myDatabase->addColumnTone();
     myDatabase->addColumnToneServer();
     myDatabase->ALTERTABLEcontrolerUri64Char();
 
-    connect(myDatabase,SIGNAL(onNewControler(int , int , int , QString , int , int , uint8_t , bool , bool , uint8_t ,quint8  , quint8  , float ,float , bool , bool , QString , int , int, bool, int, QString, bool, uint8_t, uint8_t, uint8_t, bool, float, int,float))
-                   ,this,SLOT(onNewControler(int , int , int , QString , int , int , uint8_t , bool , bool , uint8_t ,quint8  , quint8  , float ,float , bool , bool , QString , int , int, bool, int, QString, bool, uint8_t, uint8_t, uint8_t, bool, float, int,float)));
+    connect(myDatabase,SIGNAL(onNewControler(int , int , int , QString , int , int , uint8_t , bool , bool , uint8_t ,quint8  , quint8  , float ,float , bool , bool , QString , int , int, bool, int, QString, bool, uint8_t, uint8_t, uint8_t, bool, float, int,float,uint8_t , uint8_t , QString , QString ))
+                   ,this,SLOT(onNewControler(int , int , int , QString , int , int , uint8_t , bool , bool , uint8_t ,quint8  , quint8  , float ,float , bool , bool , QString , int , int, bool, int, QString, bool, uint8_t, uint8_t, uint8_t, bool, float, int,float,uint8_t , uint8_t , QString , QString )));
 
     connect(myDatabase,SIGNAL(newRediodata(uint8_t, bool, bool, int, float, int, float)),
             this,SLOT(newRediodata(uint8_t, bool, bool, int, float, int, float)));
@@ -311,6 +312,12 @@ void iGate4x::initServer(int index)
                       this,SLOT(updateOutputGain(uint8_t , uint8_t )));
     connect(SocketServer,SIGNAL(updateDSPOutputGain(uint8_t , uint8_t )),
                       this,SLOT(updateDSPOutputGain(uint8_t , uint8_t )));
+    connect(SocketServer,SIGNAL(updateDSPRecInputGain(int , uint8_t )),
+                      this,SLOT(updateDSPRecInputGain(int , uint8_t )));
+    connect(SocketServer,SIGNAL(updateRecAddress(QString ,int  ,uint8_t )),
+                      this,SLOT(updateRecAddress(QString ,int  ,uint8_t )));
+    connect(SocketServer,SIGNAL(updateDSPRecOutputGain(int , uint8_t )),
+                      this,SLOT(updateDSPRecOutputGain(int , uint8_t )));
     connect(SocketServer,SIGNAL(updateURILits(QStringList , int )),
                       this,SLOT(updateURILits(QStringList , int )));
     connect(SocketServer,SIGNAL(updateRxBestSignalEnable(bool , int )),
@@ -458,6 +465,12 @@ void iGate4x::loopGetAudioLevel()
     level_out2 = getAudioLevel(MOD_LEVEL1_5_ALG0_SINGLEBANDLEVELDETS3005X_ADDR,MOD_LEVEL1_5_ALG0_SINGLEBANDLEVELDETS3005XLO_ADDR);
     level_out3 = getAudioLevel(MOD_LEVEL1_6_ALG0_SINGLEBANDLEVELDETS3007X_ADDR,MOD_LEVEL1_6_ALG0_SINGLEBANDLEVELDETS3007XLO_ADDR);
     level_out4 = getAudioLevel(MOD_LEVEL1_7_ALG0_SINGLEBANDLEVELDETS3008X_ADDR,MOD_LEVEL1_7_ALG0_SINGLEBANDLEVELDETS3008XLO_ADDR);
+
+    level_inOut1 = getAudioLevel(MOD_RECCH_1_ALG0_SINGLEBANDLEVELDETS3009X_ADDR,MOD_RECCH_1_ALG0_SINGLEBANDLEVELDETS3009XLO_ADDR);
+    level_inOut2 = getAudioLevel(MOD_RECCH_2_ALG0_SINGLEBANDLEVELDETS30010X_ADDR,MOD_RECCH_2_ALG0_SINGLEBANDLEVELDETS30010XLO_ADDR);
+    level_inOut3 = getAudioLevel(MOD_RECCH_3_ALG0_SINGLEBANDLEVELDETS30011X_ADDR,MOD_RECCH_3_ALG0_SINGLEBANDLEVELDETS30011XLO_ADDR);
+    level_inOut4 = getAudioLevel(MOD_RECCH_4_ALG0_SINGLEBANDLEVELDETS30012X_ADDR,MOD_RECCH_4_ALG0_SINGLEBANDLEVELDETS30012XLO_ADDR);
+
     log_level_in1 = 10*log10(level_in1);
     log_level_in2 = 10*log10(level_in2);
     log_level_in3 = 10*log10(level_in3);
@@ -467,10 +480,18 @@ void iGate4x::loopGetAudioLevel()
     log_level_out3 = 10*log10(level_out3);
     log_level_out4 = 10*log10(level_out4);
 
+    log_level_inOut1 = 10*log10(level_inOut1);
+    log_level_inOut2 = 10*log10(level_inOut2);
+    log_level_inOut3 = 10*log10(level_inOut3);
+    log_level_inOut4 = 10*log10(level_inOut4);
+
     SocketServer->broadcastVUMeter(level_in1,level_in2,level_in3,level_in4,
                                    level_out1,level_out2,level_out3,level_out4,
                                    log_level_in1,log_level_in2,log_level_in3,log_level_in4,
-                                   log_level_out1,log_level_out2,log_level_out3,log_level_out4);
+                                   log_level_out1,log_level_out2,log_level_out3,log_level_out4,
+                                   level_inOut1,level_inOut2,level_inOut3,level_inOut4,
+                                   log_level_inOut1,log_level_inOut2,log_level_inOut3,log_level_inOut4
+                                   );
     if (SocketServer->m_WebSocketVUClients.size() == 0)
     {
 //        qDebug() << "loopTimerGetAudioLevel->stop()";
@@ -663,10 +684,15 @@ void iGate4x::getServerHomePage(uint8_t softPhoneID,QWebSocket *pSender)
     float tone_frequency =  m_softPhone_list.at(i)-> frequency;
     int tone_phase =  m_softPhone_list.at(i)-> phase;
     float tone_level = m_softPhone_list.at(i)-> level;
+    uint8_t recInputDSPLevel = m_softPhone_list.at(i)->recInputDSPLevel;
+    uint8_t recOutputDSPLevel = m_softPhone_list.at(i)->recOutputDSPLevel;
+    QString recServerAddr1 = m_softPhone_list.at(i)->recServerAddr1;
+    QString recServerAddr2 = m_softPhone_list.at(i)->recServerAddr2;
 
     SocketServer->updateHomeInput(deviceName,sipUser, inputLevel, outputLevel, pSender, keepAlivePeroid, sipPort, portInterface ,txScheduler,invitemode,
                                   sidetone, defaultEthernet,testModeEnable,softPhoneID,mainRadioTxUsed,mainRadioRxUsed,radioAutoInactive,radioMainStandby,
-                                  localSidetone,pttDelay,outputDSPgain,tone_state , tone_frequency, tone_phase, tone_level);
+                                  localSidetone,pttDelay,outputDSPgain,tone_state , tone_frequency, tone_phase, tone_level,
+                                  recInputDSPLevel,recOutputDSPLevel,recServerAddr1,recServerAddr2);
    SocketServer->updateFIRfiltersendClient(FIRInput,FIROutput,pSender);
 
 }
@@ -723,6 +749,10 @@ void iGate4x::getHomePage(uint8_t softPhoneID,QWebSocket *pSender)
     float tone_frequency =  m_softPhone_list.at(i)-> frequency;
     int tone_phase =  m_softPhone_list.at(i)-> phase;
     float tone_level = m_softPhone_list.at(i)-> level;
+    uint8_t recInputDSPLevel = m_softPhone_list.at(i)->recInputDSPLevel;
+    uint8_t recOutputDSPLevel = m_softPhone_list.at(i)->recOutputDSPLevel;
+    QString recServerAddr1 = m_softPhone_list.at(i)->recServerAddr1;
+    QString recServerAddr2 = m_softPhone_list.at(i)->recServerAddr2;
 
     if (m_softPhone_list.at(i)->defaultEthernet == "eth1") defaultEthernet = 1;
 
@@ -763,7 +793,8 @@ void iGate4x::getHomePage(uint8_t softPhoneID,QWebSocket *pSender)
     SocketServer->updateClientConnStatus(connNum, TxRxStatus, lastPtt, newClient,softPhoneID);
     SocketServer->updateHomeInput(deviceName,sipUser, inputLevel, outputLevel, newClient, keepAlivePeroid, sipPort, portInterface ,txScheduler,
                                   invitemode, sidetone, defaultEthernet,testModeEnable,softPhoneID,mainRadioTxUsed,mainRadioRxUsed,radioAutoInactive,
-                                  radioMainStandby,localSidetone,pttDelay,outputDSPgain,tone_state, tone_frequency, tone_phase, tone_level);
+                                  radioMainStandby,localSidetone,pttDelay,outputDSPgain,tone_state, tone_frequency, tone_phase, tone_level,
+                                  recInputDSPLevel,recOutputDSPLevel,recServerAddr1,recServerAddr2);
     SocketServer->updateURIConnList(uriConnList, newClient);
     SocketServer->updateSqlDefeat(m_softPhone_list.at(i)->sqlAlwayOn,newClient);
     SocketServer->updateSqlActiveHigh(m_softPhone_list.at(i)->sqlActiveHigh,newClient);
@@ -1125,7 +1156,8 @@ void iGate4x::onNewControler(int softPhoneID, int channelID, int sipPort, QStrin
                              bool mainRadioTransmitterUsed, bool mainRadioReceiverUsed, uint8_t ServerClientMode, quint8  txScheduler, quint8  numConnection, float sidetone,
                              float localSidetone, bool sqlAlwayOn, bool sqlActiveHigh, QString deviceName, int inputLevel, int outputLevel,
                              bool radioAutoInactive, int radioMainStandby, QString defaultEthernet, bool rxBestSignalEnable, uint8_t groupMute, uint8_t pttDelay, uint8_t outputDSPLevel
-                             ,bool tone_state,float frequency,int phase,float level)
+                             ,bool tone_state,float frequency,int phase,float level,
+                             uint8_t recInputDSPLevel, uint8_t recOutputDSPLevel, QString recServerAddr1, QString recServerAddr2)
 {
     int i = (softPhoneIDCheck(softPhoneID));
     qDebug() << "getNewControler" << softPhoneID << sipUser << channelID << "wireConnectMode" << wireConnectMode << "radioMainStandby" << radioMainStandby << "pttDelay" << pttDelay;
@@ -1161,10 +1193,14 @@ void iGate4x::onNewControler(int softPhoneID, int channelID, int sipPort, QStrin
     m_softPhone_list.at(i)->rxBestSignalEnable = rxBestSignalEnable;
     m_softPhone_list.at(i)->groupMute = groupMute;
     m_softPhone_list.at(i)->pttDelay = pttDelay;
-    m_softPhone_list.at(i)-> tone_state = tone_state;
-    m_softPhone_list.at(i)-> frequency = frequency;
-    m_softPhone_list.at(i)-> phase = phase;
-    m_softPhone_list.at(i)-> level = level;
+    m_softPhone_list.at(i)->tone_state = tone_state;
+    m_softPhone_list.at(i)->frequency = frequency;
+    m_softPhone_list.at(i)->phase = phase;
+    m_softPhone_list.at(i)->level = level;
+    m_softPhone_list.at(i)->recInputDSPLevel = recInputDSPLevel;
+    m_softPhone_list.at(i)->recOutputDSPLevel = recOutputDSPLevel;
+    m_softPhone_list.at(i)->recServerAddr1 = recServerAddr1;
+    m_softPhone_list.at(i)->recServerAddr2 = recServerAddr2;
 
     stopAllSoftphone(softPhoneID);
     startAllSoftphone(softPhoneID);
@@ -1174,6 +1210,8 @@ void iGate4x::onNewControler(int softPhoneID, int channelID, int sipPort, QStrin
     updateOutputGain(outputLevel,softPhoneID);
     updateDSPOutputGain(outputDSPLevel,softPhoneID);
     updateInputTone(tone_state,frequency,phase,level,softPhoneID);
+    updateDSPRecInputGain(recInputDSPLevel,softPhoneID);
+    updateDSPRecOutputGain(recOutputDSPLevel,softPhoneID);
 // qDebug() << "debugTone " <<tone_state <<"frequency"<<frequency;
 //    bool , float , int , float, uint8_t
     //system("amixer -c APE sset 'I2S3 fsync width' 0");
